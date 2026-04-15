@@ -47,10 +47,11 @@ A high-performance, low-latency touch injection wrapper for Android devices and 
    ```
 
 3. **Download Minitouch Binaries**:
-   Minitouch requires architecture-specific binaries. Run the included script to fetch them automatically from the official STF repository:
+   Minitouch requires architecture-specific binaries. Run the included script to fetch them automatically. The script uses the highly reliable **AirtestProject** repository as its primary source:
    ```bash
    python download_binaries.py
    ```
+   *Note: This script now includes full support for **x86** and **x86_64** architectures, commonly used in emulators like LDPlayer, Nox, and BlueStacks.*
 
 ---
 
@@ -171,7 +172,7 @@ The wrapper communicates via the standard minitouch text protocol:
 
 ## ❓ Troubleshooting
 
-- **"Minitouch binary not found"**: Ensure you have run `python download_binaries.py`.
+- **"Minitouch binary not found"**: Ensure you have run `python download_binaries.py`. If the script fails, it might be due to network restrictions. The script fetches binaries from the [AirtestProject GitHub](https://github.com/AirtestProject/Airtest).
 - **"ADB command failed"**: Check if your device is connected (`adb devices`) and that `adb.exe` is in your PATH.
 - **Permission Denied**: The wrapper attempts to `chmod 755` the binary. On some highly secured devices, you may need to push to a different directory than `/data/local/tmp`.
 - **Coordinates Offset**: If touches are hitting the wrong spot, verify if your emulator has "High DPI" settings enabled, which can sometimes interfere with `wm size` reporting.
