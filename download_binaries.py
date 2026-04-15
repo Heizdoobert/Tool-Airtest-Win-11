@@ -4,32 +4,14 @@ import ssl
 
 def download_binaries():
     """
-    Downloads pre-built minitouch binaries from GitHub.
-    Tries multiple organizations, repositories, branches, and paths.
+    Downloads pre-built minitouch binaries from the AirtestProject repository.
+    This is a highly reliable source as it is actively maintained.
     """
-    sources = [
-        {"org": "openstf", "repo": "stf-binaries"},
-        {"org": "DeviceFarmer", "repo": "stf-binaries"},
-        {"org": "openstf", "repo": "minitouch-prebuilt"},
-        {"org": "DeviceFarmer", "repo": "minitouch-prebuilt"},
-        {"org": "AirtestProject", "repo": "Airtest"},
-        {"org": "openstf", "repo": "minitouch"},
-        {"org": "DeviceFarmer", "repo": "minitouch"},
-        {"org": "stf-binaries", "repo": "stf-binaries"}
-    ]
-    branches = ["master", "main", "devel", "prebuilt"]
-    paths = [
-        "node_modules/minitouch-prebuilt/prebuilt/{abi}/bin/minitouch",
-        "node_modules/@openstf/minitouch-prebuilt/prebuilt/{abi}/bin/minitouch",
-        "prebuilt/{abi}/bin/minitouch",
-        "bin/{abi}/minitouch",
-        "{abi}/bin/minitouch",
-        "libs/{abi}/minitouch",
-        "airtest/core/android/static/bin/minitouch/{abi}/minitouch",
-        "dist/minitouch/{abi}/minitouch"
-    ]
-    # Standard ABIs usually available in the prebuilt package
-    abis = ["arm64-v8a", "armeabi-v7a", "armeabi", "x86", "x86_64"]
+    # AirtestProject provides a comprehensive set of stf-binaries
+    base_url = "https://raw.githubusercontent.com/AirtestProject/Airtest/master/airtest/core/android/static/stf_libs"
+    
+    # Standard ABIs supported
+    abis = ["arm64-v8a", "armeabi-v7a", "armeabi", "x86", "x86_64", "mips", "mips64"]
     
     # Target directory inside the package
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -47,50 +29,33 @@ def download_binaries():
     for abi in abis:
         abi_dir = os.path.join(target_base_dir, abi)
         os.makedirs(abi_dir, exist_ok=True)
+        
+        # Airtest structure: stf_libs/<abi>/minitouch
+        url = f"{base_url}/{abi}/minitouch"
         target_path = os.path.join(abi_dir, "minitouch")
         
-        downloaded = False
         print(f"[*] Downloading {abi.ljust(12)} ... ", end="", flush=True)
-        
-        for source in sources:
-            org = source["org"]
-            repo = source["repo"]
-            for branch in branches:
-                for path_template in paths:
-                    path = path_template.format(abi=abi)
-                    url = f"https://raw.githubusercontent.com/{org}/{repo}/{branch}/{path}"
-                    try:
-                        req = urllib.request.Request(
-                            url, 
-                            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
-                        )
-                        
-                        with urllib.request.urlopen(req, context=ctx) as response:
-                            content = response.read()
-                            if len(content) > 1000:
-                                with open(target_path, 'wb') as out_file:
-                                    out_file.write(content)
-                                print(f"DONE ({org}/{repo}/{branch})")
-                                success_count += 1
-                                downloaded = True
-                                break
-                    except Exception:
-                        continue
-                if downloaded:
-                    break
-            if downloaded:
-                break
-        
-        if not downloaded:
-            print("FAILED (All variations tried)")
+        try:
+            req = urllib.request.Request(
+                url, 
+                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+            )
+            
+            with urllib.request.urlopen(req, context=ctx) as response:
+                content = response.read()
+                if len(content) > 1000:
+                    with open(target_path, 'wb') as out_file:
+                        out_file.write(content)
+                    print("DONE")
+                    success_count += 1
+                else:
+                    print("FAILED (File too small)")
+        except Exception as e:
+            print(f"FAILED ({e})")
 
     print(f"\n--- Download Complete: {success_count}/{len(abis)} binaries retrieved ---")
     if success_count == 0:
-        print("ERROR: No binaries were downloaded. The repository structure might have changed.")
-        print("Please manually download binaries from:")
-        print("1. https://github.com/openstf/stf-binaries")
-        print("2. https://github.com/DeviceFarmer/stf-binaries")
-        print("And place them in airtouch_fast/binaries/<abi>/minitouch")
+        print("ERROR: No binaries were downloaded. Please check your internet connection.")
     else:
         print("You can now use MinitouchWrapper in your projects.")
 
