@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "airtouch-fast"
+version = "0.1.0"
+authors = [
+  { name="Senior Python Developer", email="author@example.com" },
+]
+description = "A high-performance minitouch wrapper for Android automation with Airtest."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["airtouch_fast*"]

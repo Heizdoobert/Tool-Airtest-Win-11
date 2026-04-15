@@ -41,6 +41,7 @@ A high-performance, low-latency touch injection wrapper for Android devices and 
    ```
 
 2. **Install the package**:
+   > **Note:** Ensure you are in the **project root** directory (the one containing `setup.py` and `pyproject.toml`), NOT the `airtouch_fast` subdirectory.
    ```bash
    pip install -e .
    ```

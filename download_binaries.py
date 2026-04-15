@@ -5,21 +5,16 @@ import ssl
 def download_binaries():
     """
     Downloads pre-built minitouch binaries from DeviceFarmer's stf-binaries repository.
-    This repository is the standard source for pre-built minitouch binaries used by STF.
+    Tries multiple branches and common paths to find the binaries.
     """
-    # Source: https://github.com/openstf/stf-binaries
-    base_url = "https://github.com/openstf/stf-binaries/raw/master/node_modules/minitouch-prebuilt/prebuilt"
-    
-    # Comprehensive list of ABIs supported by minitouch-prebuilt
-    abis = [
-        "arm64-v8a", 
-        "armeabi-v7a", 
-        "armeabi", 
-        "mips", 
-        "mips64", 
-        "x86", 
-        "x86_64"
+    branches = ["master", "main"]
+    paths = [
+        "node_modules/minitouch-prebuilt/prebuilt/{abi}/bin/minitouch",
+        "node_modules/@openstf/minitouch-prebuilt/prebuilt/{abi}/bin/minitouch",
+        "bin/{abi}/minitouch"
     ]
+    # Standard ABIs usually available in the prebuilt package
+    abis = ["arm64-v8a", "armeabi-v7a", "armeabi", "x86", "x86_64"]
     
     # Target directory inside the package
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -28,7 +23,7 @@ def download_binaries():
     print("--- Minitouch Binary Downloader ---")
     print(f"Target directory: {target_base_dir}\n")
 
-    # Handle SSL certificate verification issues that sometimes occur on Windows
+    # Handle SSL certificate verification issues
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
@@ -37,32 +32,43 @@ def download_binaries():
     for abi in abis:
         abi_dir = os.path.join(target_base_dir, abi)
         os.makedirs(abi_dir, exist_ok=True)
-        
-        url = f"{base_url}/{abi}/bin/minitouch"
         target_path = os.path.join(abi_dir, "minitouch")
         
+        downloaded = False
         print(f"[*] Downloading {abi.ljust(12)} ... ", end="", flush=True)
-        try:
-            # Using a custom opener to handle potential SSL issues
-            with urllib.request.urlopen(url, context=ctx) as response, open(target_path, 'wb') as out_file:
-                out_file.write(response.read())
-            
-            # Ensure the file has a reasonable size (not a 404 page)
-            if os.path.getsize(target_path) < 1000:
-                print("FAILED (File too small, possibly invalid)")
-                os.remove(target_path)
-            else:
-                print("DONE")
-                success_count += 1
-        except Exception as e:
-            print(f"FAILED ({type(e).__name__})")
-            # Clean up empty/failed files
-            if os.path.exists(target_path):
-                os.remove(target_path)
+        
+        for branch in branches:
+            for path_template in paths:
+                path = path_template.format(abi=abi)
+                url = f"https://raw.githubusercontent.com/openstf/stf-binaries/{branch}/{path}"
+                try:
+                    req = urllib.request.Request(
+                        url, 
+                        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+                    )
+                    
+                    with urllib.request.urlopen(req, context=ctx) as response:
+                        content = response.read()
+                        if len(content) > 1000:
+                            with open(target_path, 'wb') as out_file:
+                                out_file.write(content)
+                            print(f"DONE (path: {path})")
+                            success_count += 1
+                            downloaded = True
+                            break
+                except Exception:
+                    continue
+            if downloaded:
+                break
+        
+        if not downloaded:
+            print("FAILED (All variations tried)")
 
     print(f"\n--- Download Complete: {success_count}/{len(abis)} binaries retrieved ---")
     if success_count == 0:
-        print("ERROR: No binaries were downloaded. Please check your internet connection.")
+        print("ERROR: No binaries were downloaded. The repository structure might have changed.")
+        print("Please manually download binaries from: https://github.com/openstf/stf-binaries")
+        print("And place them in airtouch_fast/binaries/<abi>/minitouch")
     else:
         print("You can now use MinitouchWrapper in your projects.")
 
