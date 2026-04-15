@@ -81,6 +81,13 @@ mt.stop()
 - `serial`: The ADB serial of the target device.
 - `bin_path`: Custom path to minitouch binaries (defaults to internal `binaries/` folder).
 
+### `set_adb_path(path)`
+Sets the global path to the ADB executable. Use this if ADB is not in your system's `PATH`.
+```python
+from airtouch_fast import set_adb_path
+set_adb_path(r"C:\platform-tools\adb.exe")
+```
+
 ### `.start()`
 Pushes the binary, starts the daemon on the device, sets up ADB forwarding, and connects the socket.
 
@@ -103,6 +110,21 @@ Closes the socket, removes ADB forwarding, and kills the daemon process on the d
 
 ---
 
+## 🧪 Testing
+
+To verify the tool works with your connected device, run the included test suite:
+
+```bash
+python test_airtouch.py
+```
+
+This will:
+1. Detect connected devices.
+2. Push the correct binary for your device's ABI.
+3. Start the daemon and perform a test tap and swipe.
+
+---
+
 ## 🔗 Airtest Integration
 
 To use `airtouch-fast` as a high-performance replacement for Airtest's default touch:
@@ -122,6 +144,9 @@ mt.start()
 # Replace standard touch calls
 # Instead of touch((500, 500)), use:
 mt.touch(500, 500)
+
+# Or globally monkey-patch your device instance (Advanced)
+# dev.touch = mt.touch
 ```
 
 ---

@@ -61,9 +61,11 @@ class MinitouchWrapper:
         # -n specifies the abstract socket name
         cmd = f"adb {'-s ' + self.serial if self.serial else ''} shell {remote_path} -n {self.socket_name}"
         self.daemon_proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        time.sleep(0.5) # Give it a moment to start
+        
+        # Wait for daemon to initialize abstract socket
+        time.sleep(1.0)
 
-    def start(self):
+    def start(self, retries=5, delay=1):
         with self._lock:
             if self._running:
                 return
@@ -75,13 +77,21 @@ class MinitouchWrapper:
             forward_out = run_adb_command(f"forward tcp:0 localabstract:{self.socket_name}", self.serial)
             self.host_port = int(forward_out)
             
-            # Connect Socket
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.connect(("127.0.0.1", self.host_port))
-            
-            self._parse_header()
-            self._running = True
-            print(f"Minitouch started on port {self.host_port}. Constraints: {self.max_x}x{self.max_y}")
+            # Connect Socket with retries
+            for attempt in range(retries):
+                try:
+                    self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    self.sock.settimeout(2.0)
+                    self.sock.connect(("127.0.0.1", self.host_port))
+                    self._parse_header()
+                    self._running = True
+                    print(f"Minitouch started on port {self.host_port}. Constraints: {self.max_x}x{self.max_y}")
+                    return
+                except (socket.error, socket.timeout) as e:
+                    if attempt == retries - 1:
+                        self.stop()
+                        raise RuntimeError(f"Failed to connect to minitouch socket after {retries} attempts: {e}")
+                    time.sleep(delay)
 
     def _parse_header(self):
         """Reads and parses the minitouch header."""

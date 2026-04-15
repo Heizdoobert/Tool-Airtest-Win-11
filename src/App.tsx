@@ -4,10 +4,21 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Terminal, Smartphone, Activity, Cpu, Zap, ShieldAlert } from 'lucide-react';
+import { Terminal, Smartphone, Activity, Cpu, Zap, ShieldAlert, RefreshCw, ChevronRight } from 'lucide-react';
 
 export default function App() {
   const [uptime, setUptime] = useState('00:00:00');
+  const [devices, setDevices] = useState<string[]>(['emulator-5554', 'emulator-5556']);
+  const [selectedDevice, setSelectedDevice] = useState('emulator-5554');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const refreshDevices = () => {
+    setIsRefreshing(true);
+    // Simulate ADB call
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 800);
+  };
 
   useEffect(() => {
     const start = Date.now();
@@ -48,8 +59,46 @@ export default function App() {
           </div>
           <div className="p-5 border-b border-line space-y-4">
             <div className="stat-group">
-              <span className="stat-label">SERIAL</span>
-              <span className="stat-value">emulator-5554</span>
+              <span className="stat-label">ADB EXECUTABLE PATH</span>
+              <div className="flex gap-2 mt-1">
+                <input 
+                  type="text" 
+                  defaultValue="adb"
+                  className="bg-white/50 border border-line/20 px-2 py-1 font-mono text-[11px] flex-1 focus:outline-none focus:border-accent"
+                  placeholder="e.g. C:\adb\adb.exe"
+                />
+                <button className="bg-ink text-bg px-2 py-1 font-mono text-[10px] hover:bg-accent transition-colors">SET</button>
+              </div>
+            </div>
+            <div className="stat-group">
+              <div className="flex items-center justify-between mb-2">
+                <span className="stat-label">TARGET DEVICE</span>
+                <button 
+                  onClick={refreshDevices}
+                  className={`text-accent hover:opacity-80 transition-all ${isRefreshing ? 'animate-spin' : ''}`}
+                >
+                  <RefreshCw size={10} />
+                </button>
+              </div>
+              <div className="space-y-1">
+                {devices.map(serial => (
+                  <button
+                    key={serial}
+                    onClick={() => setSelectedDevice(serial)}
+                    className={`w-full flex items-center justify-between px-3 py-2 font-mono text-[11px] border transition-all ${
+                      selectedDevice === serial 
+                        ? 'bg-ink text-bg border-ink' 
+                        : 'bg-white/30 border-line/10 hover:border-line/40'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${selectedDevice === serial ? 'bg-accent' : 'bg-line/20'}`}></div>
+                      {serial}
+                    </div>
+                    {selectedDevice === serial && <ChevronRight size={10} />}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="stat-group">
               <span className="stat-label">ABI</span>
@@ -90,7 +139,7 @@ export default function App() {
           <div className="aspect-[9/16] w-full max-w-[320px] border-2 border-line mx-auto relative bg-white flex items-center justify-center shadow-inner">
             <div className="absolute w-[30px] h-[30px] border border-accent rounded-full bg-accent/10 top-[40%] left-[60%] flex items-center justify-center">
               <div className="w-1 h-1 bg-accent rounded-full"></div>
-              <span className="absolute -top-[18px] left-0 text-[9px] font-mono text-accent whitespace-nowrap">ID: 0 (15000, 22000)</span>
+              <span className="absolute -top-[18px] left-0 text-[9px] font-mono text-accent whitespace-nowrap">ID: 0 @ {selectedDevice}</span>
             </div>
             <span className="text-[10px] opacity-30 font-mono">1080 x 1920 CANVAS</span>
           </div>
