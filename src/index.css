@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #E4E3E0;
+  --color-ink: #141414;
+  --color-line: #141414;
+  --color-accent: #FF4E00;
+  
+  --font-mono: 'Courier New', Courier, monospace;
+  --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-serif: 'Georgia', serif;
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@layer components {
+  .section-header {
+    @apply font-serif italic text-[12px] px-4 py-3 border-b border-line opacity-60 uppercase tracking-[0.1em];
+  }
+  
+  .stat-label {
+    @apply font-mono text-[10px] uppercase opacity-50 block mb-1;
+  }
+  
+  .stat-value {
+    @apply font-mono text-[14px] font-bold;
+  }
+  
+  .control-btn {
+    @apply bg-bg border-none p-3 font-mono text-[11px] cursor-pointer text-left transition-colors;
+  }
+  
+  .control-btn:hover {
+    @apply bg-ink text-bg;
+  }
+  
+  .log-entry {
+    @apply mb-1 border-l-2 pl-2 font-mono text-[12px];
+  }
+}

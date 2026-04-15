@@ -1,0 +1,6 @@
+{
+  "name": "airtouch-fast",
+  "description": "High-performance Android touch injection tool for Airtest on Windows 11.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
