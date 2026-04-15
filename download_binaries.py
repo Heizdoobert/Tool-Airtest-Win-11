@@ -4,14 +4,29 @@ import ssl
 
 def download_binaries():
     """
-    Downloads pre-built minitouch binaries from DeviceFarmer's stf-binaries repository.
-    Tries multiple branches and common paths to find the binaries.
+    Downloads pre-built minitouch binaries from GitHub.
+    Tries multiple organizations, repositories, branches, and paths.
     """
-    branches = ["master", "main"]
+    sources = [
+        {"org": "openstf", "repo": "stf-binaries"},
+        {"org": "DeviceFarmer", "repo": "stf-binaries"},
+        {"org": "openstf", "repo": "minitouch-prebuilt"},
+        {"org": "DeviceFarmer", "repo": "minitouch-prebuilt"},
+        {"org": "AirtestProject", "repo": "Airtest"},
+        {"org": "openstf", "repo": "minitouch"},
+        {"org": "DeviceFarmer", "repo": "minitouch"},
+        {"org": "stf-binaries", "repo": "stf-binaries"}
+    ]
+    branches = ["master", "main", "devel", "prebuilt"]
     paths = [
         "node_modules/minitouch-prebuilt/prebuilt/{abi}/bin/minitouch",
         "node_modules/@openstf/minitouch-prebuilt/prebuilt/{abi}/bin/minitouch",
-        "bin/{abi}/minitouch"
+        "prebuilt/{abi}/bin/minitouch",
+        "bin/{abi}/minitouch",
+        "{abi}/bin/minitouch",
+        "libs/{abi}/minitouch",
+        "airtest/core/android/static/bin/minitouch/{abi}/minitouch",
+        "dist/minitouch/{abi}/minitouch"
     ]
     # Standard ABIs usually available in the prebuilt package
     abis = ["arm64-v8a", "armeabi-v7a", "armeabi", "x86", "x86_64"]
@@ -37,27 +52,32 @@ def download_binaries():
         downloaded = False
         print(f"[*] Downloading {abi.ljust(12)} ... ", end="", flush=True)
         
-        for branch in branches:
-            for path_template in paths:
-                path = path_template.format(abi=abi)
-                url = f"https://raw.githubusercontent.com/openstf/stf-binaries/{branch}/{path}"
-                try:
-                    req = urllib.request.Request(
-                        url, 
-                        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
-                    )
-                    
-                    with urllib.request.urlopen(req, context=ctx) as response:
-                        content = response.read()
-                        if len(content) > 1000:
-                            with open(target_path, 'wb') as out_file:
-                                out_file.write(content)
-                            print(f"DONE (path: {path})")
-                            success_count += 1
-                            downloaded = True
-                            break
-                except Exception:
-                    continue
+        for source in sources:
+            org = source["org"]
+            repo = source["repo"]
+            for branch in branches:
+                for path_template in paths:
+                    path = path_template.format(abi=abi)
+                    url = f"https://raw.githubusercontent.com/{org}/{repo}/{branch}/{path}"
+                    try:
+                        req = urllib.request.Request(
+                            url, 
+                            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+                        )
+                        
+                        with urllib.request.urlopen(req, context=ctx) as response:
+                            content = response.read()
+                            if len(content) > 1000:
+                                with open(target_path, 'wb') as out_file:
+                                    out_file.write(content)
+                                print(f"DONE ({org}/{repo}/{branch})")
+                                success_count += 1
+                                downloaded = True
+                                break
+                    except Exception:
+                        continue
+                if downloaded:
+                    break
             if downloaded:
                 break
         
@@ -67,7 +87,9 @@ def download_binaries():
     print(f"\n--- Download Complete: {success_count}/{len(abis)} binaries retrieved ---")
     if success_count == 0:
         print("ERROR: No binaries were downloaded. The repository structure might have changed.")
-        print("Please manually download binaries from: https://github.com/openstf/stf-binaries")
+        print("Please manually download binaries from:")
+        print("1. https://github.com/openstf/stf-binaries")
+        print("2. https://github.com/DeviceFarmer/stf-binaries")
         print("And place them in airtouch_fast/binaries/<abi>/minitouch")
     else:
         print("You can now use MinitouchWrapper in your projects.")
